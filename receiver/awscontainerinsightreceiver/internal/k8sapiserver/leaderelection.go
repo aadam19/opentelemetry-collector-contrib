@@ -183,7 +183,7 @@ func (le *LeaderElection) startLeaderElection(ctx context.Context, lock resource
 					le.statefulSetClient = le.k8sClient.GetStatefulSetClient()
 					le.replicaSetClient = le.k8sClient.GetReplicaSetClient()
 					le.pVolumeClaimClient = le.k8sClient.GetPVolumeClaimClient()
-					// le.pvClient = le.k8sClient.GetPVClient()
+					le.pVolumeClient = le.k8sClient.GetPVolumeClient()
 					le.mu.Unlock()
 
 					if le.isLeadingC != nil {
