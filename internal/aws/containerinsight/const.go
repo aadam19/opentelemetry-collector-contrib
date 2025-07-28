@@ -151,8 +151,10 @@ const (
 	HyperPodSchedulable                     = "schedulable"
 	HyperPodUnschedulable                   = "unschedulable"
 
-	// kueue metrics
+	PVolumeClaims = "persistent_volume_claims"
+	PVolumes      = "persistent_volumes"
 
+	// kueue metrics
 	KueuePendingWorkloads          = "kueue_pending_workloads"
 	KueueEvictedWorkloadsTotal     = "kueue_evicted_workloads_total"
 	KueueAdmittedActiveWorkloads   = "kueue_admitted_active_workloads"
@@ -371,5 +373,8 @@ func init() {
 		HyperPodUnschedulablePendingReboot:      UnitCount,
 		HyperPodSchedulable:                     UnitCount,
 		HyperPodUnschedulable:                   UnitCount,
+
+		PVolumeClaims: UnitCount,
+		PVolumes:      UnitCount,
 	}
 }

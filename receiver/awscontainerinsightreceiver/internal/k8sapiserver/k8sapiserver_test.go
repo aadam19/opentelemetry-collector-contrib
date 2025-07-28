@@ -66,6 +66,14 @@ func (m *mockK8sClient) GetReplicaSetClient() k8sclient.ReplicaSetClient {
 	return mockClient
 }
 
+func (m *mockK8sClient) GetPVolumeClaimClient() k8sclient.PVolumeClaimClient {
+	return mockClient
+}
+
+func (m *mockK8sClient) GetPVolumeClient() k8sclient.PVolumeClient {
+	return mockClient
+}
+
 func (m *mockK8sClient) ShutdownNodeClient() {
 }
 
@@ -88,6 +96,8 @@ type MockClient struct {
 	k8sclient.PodClient
 	k8sclient.NodeClient
 	k8sclient.EpClient
+	k8sclient.PVolumeClaimClient
+	k8sclient.PVolumeClient
 
 	mock.Mock
 }
@@ -164,6 +174,18 @@ func (client *MockClient) ServiceToPodNum() map[k8sclient.Service]int {
 func (client *MockClient) PodKeyToServiceNames() map[string][]string {
 	args := client.Called()
 	return args.Get(0).(map[string][]string)
+}
+
+// k8sclient.PVolumeClaimClient
+func (client *MockClient) GetNamespaceCount() map[string]int {
+	args := client.Called()
+	return args.Get(0).(map[string]int)
+}
+
+// k8sclient.PVolumeClient
+func (client *MockClient) GetVolumeCount() int {
+	args := client.Called()
+	return args.Get(0).(int)
 }
 
 type mockEventBroadcaster struct{}
@@ -337,18 +359,26 @@ func TestK8sAPIServer_GetMetrics(t *testing.T) {
 		},
 	})
 
+	mockClient.On("GetNamespaceCount").Return(map[string]int{
+		"default":     3,
+		"kube-system": 2,
+	})
+	mockClient.On("GetVolumeCount").Return(5)
+
 	leaderElection := &LeaderElection{
-		k8sClient:         &mockK8sClient{},
-		nodeClient:        mockClient,
-		epClient:          mockClient,
-		podClient:         mockClient,
-		deploymentClient:  mockClient,
-		daemonSetClient:   mockClient,
-		statefulSetClient: mockClient,
-		replicaSetClient:  mockClient,
-		leading:           true,
-		broadcaster:       &mockEventBroadcaster{},
-		isLeadingC:        make(chan struct{}),
+		k8sClient:          &mockK8sClient{},
+		nodeClient:         mockClient,
+		epClient:           mockClient,
+		podClient:          mockClient,
+		deploymentClient:   mockClient,
+		daemonSetClient:    mockClient,
+		statefulSetClient:  mockClient,
+		replicaSetClient:   mockClient,
+		pVolumeClaimClient: mockClient,
+		pVolumeClient:      mockClient,
+		leading:            true,
+		broadcaster:        &mockEventBroadcaster{},
+		isLeadingC:         make(chan struct{}),
 	}
 
 	t.Setenv("HOST_NAME", hostName)
@@ -378,7 +408,7 @@ func TestK8sAPIServer_GetMetrics(t *testing.T) {
 			assertMetricValueEqual(t, metric, "cluster_failed_node_count", int64(1))
 			assertMetricValueEqual(t, metric, "cluster_node_count", int64(1))
 			assertMetricValueEqual(t, metric, "cluster_number_of_running_pods", int64(2))
-
+			assertMetricValueEqual(t, metric, ci.PVolumes, int64(5))
 		case ci.TypeClusterService:
 			assertMetricValueEqual(t, metric, "service_number_of_running_pods", int64(1))
 			assert.Contains(t, []string{"service1", "service2"}, getStringAttrVal(metric, ci.TypeService))
@@ -386,6 +416,16 @@ func TestK8sAPIServer_GetMetrics(t *testing.T) {
 		case ci.TypeClusterNamespace:
 			assertMetricValueEqual(t, metric, "namespace_number_of_running_pods", int64(2))
 			assert.Equal(t, "default", getStringAttrVal(metric, ci.K8sNamespace))
+			assert.Equal(t, "cluster-name", getStringAttrVal(metric, ci.ClusterNameKey))
+			ns := getStringAttrVal(metric, ci.K8sNamespace)
+			switch ns {
+			case "default":
+				assertMetricValueEqual(t, metric, ci.PVolumeClaims, int64(3))
+			case "kube-system":
+				assertMetricValueEqual(t, metric, ci.PVolumeClaims, int64(2))
+			default:
+				assert.Fail(t, "Unexpected namespace in ClusterPersistentVolumeClaim metric: "+ns)
+			}
 		case ci.TypeClusterDeployment:
 			assertMetricValueEqual(t, metric, "replicas_desired", int64(11))
 			assertMetricValueEqual(t, metric, "replicas_ready", int64(10))

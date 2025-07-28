@@ -57,6 +57,8 @@ type K8sClient interface {
 	GetDaemonSetClient() k8sclient.DaemonSetClient
 	GetStatefulSetClient() k8sclient.StatefulSetClient
 	GetReplicaSetClient() k8sclient.ReplicaSetClient
+	GetPVolumeClaimClient() k8sclient.PVolumeClaimClient
+	GetPVolumeClient() k8sclient.PVolumeClient
 	ShutdownNodeClient()
 	ShutdownPodClient()
 }
@@ -154,6 +156,13 @@ func (k *K8sAPIServer) getClusterMetrics(clusterName, timestampNs string) pmetri
 	}
 	fields["cluster_number_of_running_pods"] = clusterPodCount
 
+	// Add PV count if enhanced metrics are enabled
+	if k.includeEnhancedMetrics && k.leaderElection.pVolumeClient != nil {
+		if pvCount := k.leaderElection.pVolumeClient.GetVolumeCount(); pvCount > 0 {
+			fields[ci.PVolumes] = pvCount
+		}
+	}
+
 	attributes := map[string]string{
 		ci.ClusterNameKey: clusterName,
 		ci.MetricType:     ci.TypeCluster,
@@ -169,10 +178,25 @@ func (k *K8sAPIServer) getClusterMetrics(clusterName, timestampNs string) pmetri
 
 func (k *K8sAPIServer) getNamespaceMetrics(clusterName, timestampNs string) []pmetric.Metrics {
 	var metrics []pmetric.Metrics
+
+	// Get PVC counts if enhanced metrics are enabled
+	var pvcCounts map[string]int
+	if k.includeEnhancedMetrics && k.leaderElection.pVolumeClaimClient != nil {
+		pvcCounts = k.leaderElection.pVolumeClaimClient.GetNamespaceCount()
+	}
+
 	for namespace, podNum := range k.leaderElection.podClient.NamespaceToRunningPodNum() {
 		fields := map[string]any{
 			"namespace_number_of_running_pods": podNum,
 		}
+
+		// Add PVC count if available for this namespace
+		if pvcCounts != nil {
+			if pvcCount, exists := pvcCounts[namespace]; exists {
+				fields[ci.PVolumeClaims] = pvcCount
+			}
+		}
+
 		attributes := map[string]string{
 			ci.ClusterNameKey: clusterName,
 			ci.MetricType:     ci.TypeClusterNamespace,
