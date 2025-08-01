@@ -44,6 +44,7 @@ type LeaderElection struct {
 	replicaSetClient   k8sclient.ReplicaSetClient
 	pVolumeClaimClient k8sclient.PVolumeClaimClient
 	pVolumeClient      k8sclient.PVolumeClient
+	ingressClient      k8sclient.IngressClient
 
 	// the following can be set to mocks in testing
 	broadcaster eventBroadcaster
@@ -184,6 +185,7 @@ func (le *LeaderElection) startLeaderElection(ctx context.Context, lock resource
 					le.replicaSetClient = le.k8sClient.GetReplicaSetClient()
 					le.pVolumeClaimClient = le.k8sClient.GetPVolumeClaimClient()
 					le.pVolumeClient = le.k8sClient.GetPVolumeClient()
+					le.ingressClient = le.k8sClient.GetIngressClient()
 					le.mu.Unlock()
 
 					if le.isLeadingC != nil {

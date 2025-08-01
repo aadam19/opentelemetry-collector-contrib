@@ -59,6 +59,7 @@ type K8sClient interface {
 	GetReplicaSetClient() k8sclient.ReplicaSetClient
 	GetPVolumeClaimClient() k8sclient.PVolumeClaimClient
 	GetPVolumeClient() k8sclient.PVolumeClient
+	GetIngressClient() k8sclient.IngressClient
 	ShutdownNodeClient()
 	ShutdownPodClient()
 }
@@ -156,10 +157,15 @@ func (k *K8sAPIServer) getClusterMetrics(clusterName, timestampNs string) pmetri
 	}
 	fields["cluster_number_of_running_pods"] = clusterPodCount
 
-	// Add PV count if enhanced metrics are enabled
 	if k.includeEnhancedMetrics && k.leaderElection.pVolumeClient != nil {
+		// Add PV count if enhanced metrics are enabled
 		if pvCount := k.leaderElection.pVolumeClient.GetVolumeCount(); pvCount > 0 {
 			fields[ci.PVolumes] = pvCount
+		}
+
+		// Add Ingress count if enhanced metrics are enabled
+		if ingressCount := k.leaderElection.ingressClient.GetIngressCount(); ingressCount > 0 {
+			fields[ci.IngressTotal] = ingressCount
 		}
 	}
 
@@ -179,10 +185,16 @@ func (k *K8sAPIServer) getClusterMetrics(clusterName, timestampNs string) pmetri
 func (k *K8sAPIServer) getNamespaceMetrics(clusterName, timestampNs string) []pmetric.Metrics {
 	var metrics []pmetric.Metrics
 
-	// Get PVC counts if enhanced metrics are enabled
+	// Get PVC/Ingress counts if enhanced metrics are enabled
 	var pvcCounts map[string]int
-	if k.includeEnhancedMetrics && k.leaderElection.pVolumeClaimClient != nil {
-		pvcCounts = k.leaderElection.pVolumeClaimClient.GetNamespaceCount()
+	var ingressCounts map[string]int
+	if k.includeEnhancedMetrics {
+		if k.leaderElection.pVolumeClaimClient != nil {
+			pvcCounts = k.leaderElection.pVolumeClaimClient.GetNamespaceCount()
+		}
+		if k.leaderElection.ingressClient != nil {
+			ingressCounts = k.leaderElection.ingressClient.GetNamespaceCount()
+		}
 	}
 
 	for namespace, podNum := range k.leaderElection.podClient.NamespaceToRunningPodNum() {
@@ -194,6 +206,13 @@ func (k *K8sAPIServer) getNamespaceMetrics(clusterName, timestampNs string) []pm
 		if pvcCounts != nil {
 			if pvcCount, exists := pvcCounts[namespace]; exists {
 				fields[ci.PVolumeClaims] = pvcCount
+			}
+		}
+
+		// Add Ingress count if availbale for this namespace
+		if ingressCounts != nil {
+			if ingressCount, exists := ingressCounts[namespace]; exists {
+				fields[ci.Ingress] = ingressCount
 			}
 		}
 

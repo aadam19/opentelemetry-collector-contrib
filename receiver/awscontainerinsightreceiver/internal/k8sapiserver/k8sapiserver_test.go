@@ -74,6 +74,10 @@ func (m *mockK8sClient) GetPVolumeClient() k8sclient.PVolumeClient {
 	return mockClient
 }
 
+func (m *mockK8sClient) GetIngressClient() k8sclient.IngressClient {
+	return mockClient
+}
+
 func (m *mockK8sClient) ShutdownNodeClient() {
 }
 
@@ -98,6 +102,7 @@ type MockClient struct {
 	k8sclient.EpClient
 	k8sclient.PVolumeClaimClient
 	k8sclient.PVolumeClient
+	k8sclient.IngressClient
 
 	mock.Mock
 }
@@ -184,6 +189,18 @@ func (client *MockClient) GetNamespaceCount() map[string]int {
 
 // k8sclient.PVolumeClient
 func (client *MockClient) GetVolumeCount() int {
+	args := client.Called()
+	return args.Get(0).(int)
+}
+
+// k8sclient.IngressClient
+func (client *MockClient) IngressInfos() []*k8sclient.IngressInfo {
+	args := client.Called()
+	return args.Get(0).([]*k8sclient.IngressInfo)
+}
+
+// k8sclient.IngressClient
+func (client *MockClient) GetIngressCount() int {
 	args := client.Called()
 	return args.Get(0).(int)
 }
@@ -364,6 +381,15 @@ func TestK8sAPIServer_GetMetrics(t *testing.T) {
 		"kube-system": 2,
 	})
 	mockClient.On("GetVolumeCount").Return(5)
+	mockClient.On("IngressInfos").Return([]*k8sclient.IngressInfo{
+		{
+			Name:      "test-ingress",
+			Namespace: "default",
+			UID:       "test-uid-123",
+			Labels:    map[string]string{"app": "test"},
+		},
+	})
+	mockClient.On("GetIngressCount").Return(5)
 
 	leaderElection := &LeaderElection{
 		k8sClient:          &mockK8sClient{},
@@ -376,6 +402,7 @@ func TestK8sAPIServer_GetMetrics(t *testing.T) {
 		replicaSetClient:   mockClient,
 		pVolumeClaimClient: mockClient,
 		pVolumeClient:      mockClient,
+		ingressClient:      mockClient,
 		leading:            true,
 		broadcaster:        &mockEventBroadcaster{},
 		isLeadingC:         make(chan struct{}),
@@ -409,6 +436,7 @@ func TestK8sAPIServer_GetMetrics(t *testing.T) {
 			assertMetricValueEqual(t, metric, "cluster_node_count", int64(1))
 			assertMetricValueEqual(t, metric, "cluster_number_of_running_pods", int64(2))
 			assertMetricValueEqual(t, metric, ci.PVolumes, int64(5))
+			assertMetricValueEqual(t, metric, ci.IngressTotal, int64(5))
 		case ci.TypeClusterService:
 			assertMetricValueEqual(t, metric, "service_number_of_running_pods", int64(1))
 			assert.Contains(t, []string{"service1", "service2"}, getStringAttrVal(metric, ci.TypeService))
@@ -421,8 +449,10 @@ func TestK8sAPIServer_GetMetrics(t *testing.T) {
 			switch ns {
 			case "default":
 				assertMetricValueEqual(t, metric, ci.PVolumeClaims, int64(3))
+				assertMetricValueEqual(t, metric, ci.Ingress, int64(3))
 			case "kube-system":
 				assertMetricValueEqual(t, metric, ci.PVolumeClaims, int64(2))
+				assertMetricValueEqual(t, metric, ci.Ingress, int64(3))
 			default:
 				assert.Fail(t, "Unexpected namespace in ClusterPersistentVolumeClaim metric: "+ns)
 			}

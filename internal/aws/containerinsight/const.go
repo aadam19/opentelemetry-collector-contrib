@@ -153,6 +153,8 @@ const (
 
 	PVolumeClaims = "persistent_volume_claims"
 	PVolumes      = "persistent_volumes"
+	Ingress       = "ingress_resources"
+	IngressTotal  = "ingress_resources_total"
 
 	// kueue metrics
 	KueuePendingWorkloads          = "kueue_pending_workloads"
@@ -376,5 +378,7 @@ func init() {
 
 		PVolumeClaims: UnitCount,
 		PVolumes:      UnitCount,
+		Ingress:       UnitCount,
+		IngressTotal:  UnitCount,
 	}
 }
