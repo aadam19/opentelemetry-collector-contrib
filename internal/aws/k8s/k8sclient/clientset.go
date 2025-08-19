@@ -218,6 +218,16 @@ type statefulSetClientWithStopper interface {
 	stopper
 }
 
+type pVolumeClaimClientWithStopper interface {
+	PVolumeClaimClient
+	stopper
+}
+
+type pVolumeClientWithStopper interface {
+	PVolumeClient
+	stopper
+}
+
 type K8sClient struct {
 	kubeConfigPath       string
 	initSyncPollInterval time.Duration
@@ -254,6 +264,12 @@ type K8sClient struct {
 
 	ssMu        sync.Mutex
 	statefulSet statefulSetClientWithStopper
+
+	pvcMu        sync.Mutex
+	pVolumeClaim pVolumeClaimClientWithStopper
+
+	pvMu    sync.Mutex
+	pVolume pVolumeClientWithStopper
 
 	logger *zap.Logger
 }
@@ -459,6 +475,46 @@ func (c *K8sClient) ShutdownStatefulSetClient() {
 	})
 }
 
+func (c *K8sClient) GetPVolumeClaimClient() PVolumeClaimClient {
+	var err error
+	c.pvcMu.Lock()
+	if c.pVolumeClaim == nil || reflect.ValueOf(c.pVolumeClaim).IsNil() {
+		c.pVolumeClaim, err = newPVolumeClaimClient(c.clientSet, c.logger, PVolumeClaimSyncCheckerOption(c.syncChecker))
+		if err != nil {
+			c.logger.Error("use an no-op pVolumeClaim client instead because of error", zap.Error(err))
+			c.pVolumeClaim = &noOpPVolumeClaimClient{}
+		}
+	}
+	c.pvcMu.Unlock()
+	return c.pVolumeClaim
+}
+
+func (c *K8sClient) ShutdownPVolumeClaimClient() {
+	shutdownClient(c.pVolumeClaim, &c.pvcMu, func() {
+		c.pVolumeClaim = nil
+	})
+}
+
+func (c *K8sClient) GetPVolumeClient() PVolumeClient {
+	var err error
+	c.pvMu.Lock()
+	if c.pVolume == nil || reflect.ValueOf(c.pVolume).IsNil() {
+		c.pVolume, err = newPVolumeClient(c.clientSet, c.logger, PVolumeSyncCheckerOption(c.syncChecker))
+		if err != nil {
+			c.logger.Error("use an no-op pVolume client instead because of error", zap.Error(err))
+			c.pVolume = &noOpPVolumeClient{}
+		}
+	}
+	c.pvMu.Unlock()
+	return c.pVolume
+}
+
+func (c *K8sClient) ShutdownPVolumeClient() {
+	shutdownClient(c.pVolume, &c.pvMu, func() {
+		c.pVolume = nil
+	})
+}
+
 func (c *K8sClient) GetClientSet() kubernetes.Interface {
 	return c.clientSet
 }
@@ -476,6 +532,8 @@ func (c *K8sClient) Shutdown() {
 	c.ShutdownDeploymentClient()
 	c.ShutdownDaemonSetClient()
 	c.ShutdownStatefulSetClient()
+	c.ShutdownPVolumeClaimClient()
+	c.ShutdownPVolumeClient()
 
 	// remove the current instance of k8s client from map
 	for key, val := range optionsToK8sClient {

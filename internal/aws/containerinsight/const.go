@@ -167,8 +167,11 @@ const (
 	HyperPodSchedulable                     = "schedulable"
 	HyperPodUnschedulable                   = "unschedulable"
 
-	// kueue metrics
+	PVolumeClaimsCount = "number_of_persistent_volume_claims"
+	PVolumeClaimStatus = "persistent_volume_claim_status"
+	PVolumesCount      = "number_of_persistent_volumes"
 
+	// kueue metrics
 	KueuePendingWorkloads          = "kueue_pending_workloads"
 	KueueEvictedWorkloadsTotal     = "kueue_evicted_workloads_total"
 	KueueAdmittedActiveWorkloads   = "kueue_admitted_active_workloads"
@@ -200,6 +203,13 @@ const (
 
 	// kueue metric types
 	TypeClusterQueue = "ClusterQueue"
+
+	// PVC and PV metric types
+	TypePVC                 = "PersistentVolumeClaim"
+	TypePV                  = "PersistentVolume"
+	TypeClusterPVC          = "ClusterPVC"
+	TypeClusterNamespacePVC = "ClusterNamespacePVC"
+	TypeClusterPV           = "ClusterPV"
 
 	// Special type for pause container
 	// because containerd does not set container name pause container name to POD like docker does.
@@ -402,5 +412,9 @@ func init() {
 		HyperPodUnschedulablePendingReboot:      UnitCount,
 		HyperPodSchedulable:                     UnitCount,
 		HyperPodUnschedulable:                   UnitCount,
+
+		PVolumeClaimsCount: UnitCount,
+		PVolumesCount:      UnitCount,
+		PVolumeClaimStatus: UnitCount,
 	}
 }
