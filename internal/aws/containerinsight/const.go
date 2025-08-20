@@ -19,21 +19,27 @@ const (
 	RunAsHostProcessContainer = "RUN_AS_HOST_PROCESS_CONTAINER"
 
 	// Attribute names
-	InstanceID              = "InstanceId"
-	InstanceType            = "InstanceType"
-	ClusterNameKey          = "ClusterName"
-	AutoScalingGroupNameKey = "AutoScalingGroupName"
-	NodeNameKey             = "NodeName"
-	Version                 = "Version"
-	DiskDev                 = "device"
-	EbsVolumeID             = "ebs_volume_id" // used by kubernetes cluster as persistent volume
-	HostEbsVolumeID         = "EBSVolumeId"   // used by host filesystem
-	FSType                  = "fstype"
-	MetricType              = "Type"
-	SourcesKey              = "Sources"
-	Timestamp               = "Timestamp"
-	OperatingSystem         = "OperatingSystem"
-	OperatingSystemWindows  = "windows"
+	InstanceID                = "InstanceId"
+	InstanceType              = "InstanceType"
+	ClusterNameKey            = "ClusterName"
+	AutoScalingGroupNameKey   = "AutoScalingGroupName"
+	NodeNameKey               = "NodeName"
+	Version                   = "Version"
+	DiskDev                   = "device"
+	EbsVolumeID               = "ebs_volume_id" // used by kubernetes cluster as persistent volume
+	HostEbsVolumeID           = "EBSVolumeId"   // used by host filesystem
+	FSType                    = "fstype"
+	VolumeName                = "VolumeName"
+	PersistentVolumeClaimName = "PersistentVolumeClaimName"
+	PersistentVolumeName      = "PersistentVolumeName"
+	StorageClass              = "StorageClass"
+	WorkloadName              = "WorkloadName"
+	WorkloadKind              = "WorkloadKind"
+	MetricType                = "Type"
+	SourcesKey                = "Sources"
+	Timestamp                 = "Timestamp"
+	OperatingSystem           = "OperatingSystem"
+	OperatingSystemWindows    = "windows"
 
 	// The following constants are used for metric name construction
 	CPUTotal                         = "cpu_usage_total"

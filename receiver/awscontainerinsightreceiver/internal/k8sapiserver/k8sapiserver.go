@@ -563,13 +563,13 @@ func (k *K8sAPIServer) getPVolumeClaimMetrics(clusterName, timestampNs string) [
 		}
 
 		pvcAttributes := map[string]string{
-			ci.ClusterNameKey:       clusterName,
-			ci.MetricType:           ci.TypePVC,
-			ci.Timestamp:            timestampNs,
-			"PersistentVolumeClaim": pvcName,
-			ci.K8sNamespace:         namespace,
-			ci.Version:              "0",
-			ci.SourcesKey:           "[\"apiserver\"]",
+			ci.ClusterNameKey:           clusterName,
+			ci.MetricType:               ci.TypePVC,
+			ci.Timestamp:                timestampNs,
+			"PersistentVolumeClaimName": pvcName,
+			ci.K8sNamespace:             namespace,
+			ci.Version:                  "0",
+			ci.SourcesKey:               "[\"apiserver\"]",
 		}
 
 		md := ci.ConvertToOTLPMetrics(pvcFields, pvcAttributes, k.logger)

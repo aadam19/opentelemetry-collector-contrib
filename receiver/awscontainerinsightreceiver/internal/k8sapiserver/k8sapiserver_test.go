@@ -518,7 +518,7 @@ func TestK8sAPIServer_GetMetrics(t *testing.T) {
 			assertMetricValueEqual(t, metric, "hyperpod_node_health_status_unschedulable_pending_replacement", int64(0))
 		case ci.TypePVC:
 			namespace := getStringAttrVal(metric, ci.K8sNamespace)
-			pvcName := getStringAttrVal(metric, "PVolumeClaimName")
+			pvcName := getStringAttrVal(metric, "PersistentVolumeClaimName")
 			pvcKey := namespace + "/" + pvcName
 			switch pvcKey {
 			case "default/pvc-1":
