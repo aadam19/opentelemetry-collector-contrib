@@ -247,6 +247,7 @@ func (p *PodStore) Decorate(ctx context.Context, metric CIMetric, kubernetesBlob
 		p.decorateCPU(metric, &entry.pod)
 		p.decorateMem(metric, &entry.pod)
 		p.decorateGPU(metric, &entry.pod)
+		p.decorateDiskIO(metric, &entry.pod)
 		p.addStatus(metric, &entry.pod)
 		addContainerCount(metric, &entry.pod)
 		addContainerID(&entry.pod, metric, kubernetesBlob, p.logger)
@@ -524,6 +525,159 @@ func (p *PodStore) decorateMem(metric CIMetric, pod *corev1.Pod) {
 				}
 			}
 		}
+	}
+}
+
+func (p *PodStore) decorateDiskIO(metric CIMetric, pod *corev1.Pod) {
+	metricType := metric.GetTag(ci.MetricType)
+
+	// Only decorate container-level disk I/O metrics
+	if metricType != ci.TypeContainerDiskIO {
+		p.logger.Debug("Not a container disk I/O metric", zap.String("metricType", metricType))
+		return
+	}
+
+	containerName := metric.GetTag(ci.ContainerNamekey)
+	if containerName == "" {
+		p.logger.Debug("No container name found")
+		return
+	}
+
+	deviceName := metric.GetTag(ci.DiskDev)
+	if deviceName == "" {
+		p.logger.Debug("No device name found")
+		return
+	}
+
+	// Find the container in the pod spec
+	var containerSpec *corev1.Container
+	for i := range pod.Spec.Containers {
+		if pod.Spec.Containers[i].Name == containerName {
+			containerSpec = &pod.Spec.Containers[i]
+			break
+		}
+	}
+
+	if containerSpec == nil {
+		return
+	}
+	// Try to find the PVC that corresponds to this device
+	pvcName, volumeName := p.findPVCForDevice(deviceName, containerSpec, pod)
+
+	if pvcName != "" {
+		// Add PVC tags for aggregation
+		metric.AddTag(ci.PersistentVolumeClaimName, pvcName)
+		metric.AddTag(ci.VolumeName, volumeName)
+
+		// Add workload information
+		p.addWorkloadTags(metric, pod)
+	} else {
+		p.logger.Debug("Could not find PVC for disk I/O metric",
+			zap.String("containerName", containerName),
+			zap.String("deviceName", deviceName),
+			zap.String("podName", pod.Name))
+	}
+}
+
+// findPVCForDevice finds the PVC that corresponds to the given device
+func (p *PodStore) findPVCForDevice(deviceName string, containerSpec *corev1.Container, pod *corev1.Pod) (string, string) {
+	// Create a map of volume names to PVC info for quick lookup
+	volumeToPVC := make(map[string]struct {
+		pvcName    string
+		volumeName string
+	})
+
+	for _, volume := range pod.Spec.Volumes {
+		if volume.PersistentVolumeClaim != nil {
+			volumeToPVC[volume.Name] = struct {
+				pvcName    string
+				volumeName string
+			}{
+				pvcName:    volume.PersistentVolumeClaim.ClaimName,
+				volumeName: volume.Name,
+			}
+		}
+	}
+
+	// If there are no PVCs, return empty
+	if len(volumeToPVC) == 0 {
+		return "", ""
+	}
+
+	// Check VolumeDevices (block devices) - these have explicit device paths
+	for _, volumeDevice := range containerSpec.VolumeDevices {
+		if pvcInfo, exists := volumeToPVC[volumeDevice.Name]; exists {
+			// For block devices, check if the device name matches the device path
+			if p.devicePathMatches(deviceName, volumeDevice.DevicePath) {
+				return pvcInfo.pvcName, pvcInfo.volumeName
+			}
+		}
+	}
+
+	// Check VolumeMounts (filesystem mounts) - most PVCs use this approach
+	// Since we can't directly correlate device names to mount paths,
+	// we use a heuristic: if the container has volume mounts to PVCs,
+	// and there's only one PVC, assume the disk I/O belongs to that PVC
+	hasVolumeMount := false
+	for _, volumeMount := range containerSpec.VolumeMounts {
+		if _, exists := volumeToPVC[volumeMount.Name]; exists {
+			hasVolumeMount = true
+			break
+		}
+	}
+
+	// If container has volume mounts to PVCs and there's only one PVC,
+	// we can safely assume the disk I/O belongs to that PVC
+	if hasVolumeMount && len(volumeToPVC) == 1 {
+		for _, pvcInfo := range volumeToPVC {
+			return pvcInfo.pvcName, pvcInfo.volumeName
+		}
+	}
+
+	return "", ""
+}
+
+// devicePathMatches checks if a device name corresponds to a device path
+func (p *PodStore) devicePathMatches(deviceName, devicePath string) bool {
+	// Extract the device name from the path (e.g., /dev/sdb -> sdb)
+	deviceFromPath := strings.TrimPrefix(devicePath, "/dev/")
+
+	// Check for exact match or if one contains the other
+	return deviceName == deviceFromPath ||
+		strings.Contains(deviceName, deviceFromPath) ||
+		strings.Contains(deviceFromPath, deviceName)
+}
+
+// addWorkloadTags adds workload information tags to the metric
+func (p *PodStore) addWorkloadTags(metric CIMetric, pod *corev1.Pod) {
+	if len(pod.OwnerReferences) > 0 {
+		owner := pod.OwnerReferences[0]
+		workloadKind := owner.Kind
+		workloadName := owner.Name
+
+		// Use the same logic as addPodOwnersAndPodName for consistency
+		switch owner.Kind {
+		case ci.ReplicaSet:
+			if p.k8sClient != nil {
+				replicaSetClient := p.k8sClient.GetReplicaSetClient()
+				rsToDeployment := replicaSetClient.ReplicaSetToDeployment()
+				if parent := rsToDeployment[owner.Name]; parent != "" {
+					workloadKind = ci.Deployment
+					workloadName = parent
+				} else if parent := parseDeploymentFromReplicaSet(owner.Name); parent != "" {
+					workloadKind = ci.Deployment
+					workloadName = parent
+				}
+			}
+		case ci.Job:
+			if parent := parseCronJobFromJob(owner.Name); parent != "" {
+				workloadKind = ci.CronJob
+				workloadName = parent
+			}
+		}
+
+		metric.AddTag(ci.WorkloadKind, workloadKind)
+		metric.AddTag(ci.WorkloadName, workloadName)
 	}
 }
 

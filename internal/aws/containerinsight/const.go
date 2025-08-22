@@ -35,6 +35,12 @@ const (
 	OperatingSystem         = "OperatingSystem"
 	OperatingSystemWindows  = "windows"
 
+	VolumeName                = "VolumeName"
+	PersistentVolumeClaimName = "PersistentVolumeClaimName"
+	StorageClass              = "StorageClass"
+	WorkloadName              = "WorkloadName"
+	WorkloadKind              = "WorkloadKind"
+
 	// The following constants are used for metric name construction
 	CPUTotal                         = "cpu_usage_total"
 	CPUUser                          = "cpu_usage_user"
