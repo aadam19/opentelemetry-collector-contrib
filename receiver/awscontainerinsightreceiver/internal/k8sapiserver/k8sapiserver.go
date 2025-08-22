@@ -57,6 +57,8 @@ type K8sClient interface {
 	GetDaemonSetClient() k8sclient.DaemonSetClient
 	GetStatefulSetClient() k8sclient.StatefulSetClient
 	GetReplicaSetClient() k8sclient.ReplicaSetClient
+	GetPVolumeClaimClient() k8sclient.PVolumeClaimClient
+	GetPVolumeClient() k8sclient.PVolumeClient
 	ShutdownNodeClient()
 	ShutdownPodClient()
 }
@@ -136,6 +138,8 @@ func (k *K8sAPIServer) GetMetrics() []pmetric.Metrics {
 
 	if k.includeEnhancedMetrics {
 		result = append(result, k.getHyperPodResiliencyMetrics(clusterName, timestampNs)...)
+		result = append(result, k.getPVolumeMetrics(clusterName, timestampNs)...)
+		result = append(result, k.getPVolumeClaimMetrics(clusterName, timestampNs)...)
 	}
 
 	return result
@@ -482,6 +486,77 @@ func (k *K8sAPIServer) getHyperPodResiliencyMetrics(clusterName, timestampNs str
 			}
 		}
 	}
+	return metrics
+}
+
+func (k *K8sAPIServer) getPVolumeClaimMetrics(clusterName, timestampNs string) []pmetric.Metrics {
+	var metrics []pmetric.Metrics
+
+	pvcMetrics := k.leaderElection.pVolumeClaimClient.GetPVCMetrics()
+
+	for pvcName, phase := range pvcMetrics.PVCPhases {
+		parts := strings.Split(pvcName, "/")
+		if len(parts) != 2 {
+			k.logger.Warn("Unexpected PVC name", zap.String("pvcName", pvcName))
+			continue
+		}
+		namespace, pvcName := parts[0], parts[1]
+		pvcFields := map[string]any{
+			ci.PersistentVolumeClaim + "_count":         1,
+			ci.PersistentVolumeClaimStatus + "_pending": 0,
+			ci.PersistentVolumeClaimStatus + "_bound":   0,
+			ci.PersistentVolumeClaimStatus + "_lost":    0,
+		}
+
+		switch phase {
+		case v1.ClaimPending:
+			pvcFields[ci.PersistentVolumeClaimStatus+"_pending"] = 1
+		case v1.ClaimBound:
+			pvcFields[ci.PersistentVolumeClaimStatus+"_bound"] = 1
+		case v1.ClaimLost:
+			pvcFields[ci.PersistentVolumeClaimStatus+"_lost"] = 1
+		default:
+			k.logger.Warn("Unexpected PVC phase", zap.String("pvcName", pvcName),
+				zap.String("phase", string(phase)))
+			continue
+		}
+
+		pvcAttributes := map[string]string{
+			ci.ClusterNameKey:           clusterName,
+			ci.MetricType:               ci.TypePVC,
+			ci.Timestamp:                timestampNs,
+			"PersistentVolumeClaimName": pvcName,
+			ci.K8sNamespace:             namespace,
+			ci.Version:                  "0",
+			ci.SourcesKey:               "[\"apiserver\"]",
+		}
+
+		md := ci.ConvertToOTLPMetrics(pvcFields, pvcAttributes, k.logger)
+		metrics = append(metrics, md)
+	}
+
+	return metrics
+}
+
+func (k *K8sAPIServer) getPVolumeMetrics(clusterName, timestampNs string) []pmetric.Metrics {
+	var metrics []pmetric.Metrics
+
+	pvMetrics := k.leaderElection.pVolumeClient.GetPVMetrics()
+
+	clusterFields := map[string]any{
+		ci.PersistentVolume + "_count": pvMetrics.ClusterCount,
+	}
+
+	clusterAttributes := map[string]string{
+		ci.ClusterNameKey: clusterName,
+		ci.MetricType:     ci.TypePV,
+		ci.Timestamp:      timestampNs,
+		ci.Version:        "0",
+		ci.SourcesKey:     "[\"apiserver\"]",
+	}
+	md := ci.ConvertToOTLPMetrics(clusterFields, clusterAttributes, k.logger)
+	metrics = append(metrics, md)
+
 	return metrics
 }
 
