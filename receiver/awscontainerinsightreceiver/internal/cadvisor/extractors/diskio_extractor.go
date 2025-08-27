@@ -27,7 +27,7 @@ func (d *DiskIOMetricExtractor) HasValue(info *cInfo.ContainerInfo) bool {
 
 func (d *DiskIOMetricExtractor) GetValue(info *cInfo.ContainerInfo, _ CPUMemInfoProvider, containerType string) []*stores.CIMetricImpl {
 	var metrics []*stores.CIMetricImpl
-	if containerType != ci.TypeNode && containerType != ci.TypeInstance {
+	if containerType != ci.TypeNode && containerType != ci.TypeInstance && containerType != ci.TypeContainer {
 		return metrics
 	}
 
