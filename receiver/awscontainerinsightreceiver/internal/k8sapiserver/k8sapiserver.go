@@ -57,6 +57,8 @@ type K8sClient interface {
 	GetDaemonSetClient() k8sclient.DaemonSetClient
 	GetStatefulSetClient() k8sclient.StatefulSetClient
 	GetReplicaSetClient() k8sclient.ReplicaSetClient
+	GetPVolumeClaimClient() k8sclient.PVolumeClaimClient
+	GetPVolumeClient() k8sclient.PVolumeClient
 	ShutdownNodeClient()
 	ShutdownPodClient()
 }
@@ -136,6 +138,8 @@ func (k *K8sAPIServer) GetMetrics() []pmetric.Metrics {
 
 	if k.includeEnhancedMetrics {
 		result = append(result, k.getHyperPodResiliencyMetrics(clusterName, timestampNs)...)
+		result = append(result, k.getPVolumeMetrics(clusterName, timestampNs)...)
+		result = append(result, k.getPVolumeClaimMetrics(clusterName, timestampNs)...)
 	}
 
 	return result

@@ -37,6 +37,7 @@ const (
 
 	VolumeName                = "VolumeName"
 	PersistentVolumeClaimName = "PersistentVolumeClaimName"
+	PersistentVolumeName      = "PersistentVolumeName"
 	StorageClass              = "StorageClass"
 	WorkloadName              = "WorkloadName"
 	WorkloadKind              = "WorkloadKind"
@@ -185,7 +186,6 @@ const (
 	PersistentVolumeClaimStatusLost    = "persistent_volume_claim_status_lost"
 
 	// kueue metrics
-
 	KueuePendingWorkloads          = "kueue_pending_workloads"
 	KueueEvictedWorkloadsTotal     = "kueue_evicted_workloads_total"
 	KueueAdmittedActiveWorkloads   = "kueue_admitted_active_workloads"
@@ -217,6 +217,10 @@ const (
 
 	// kueue metric types
 	TypeClusterQueue = "ClusterQueue"
+
+	// PVC and PV metric types
+	TypePVC = "PersistentVolumeClaim"
+	TypePV  = "PersistentVolume"
 
 	// Special type for pause container
 	// because containerd does not set container name pause container name to POD like docker does.
