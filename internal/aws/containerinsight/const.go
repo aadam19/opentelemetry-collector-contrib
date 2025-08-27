@@ -167,6 +167,17 @@ const (
 	HyperPodSchedulable                     = "schedulable"
 	HyperPodUnschedulable                   = "unschedulable"
 
+	PersistentVolumeCount       = "persistent_volume_count"
+	PersistentVolumeCapacity    = "persistent_volume_capacity"
+	PersistentVolumeUsed        = "persistent_volume_used"
+	PersistentVolumeAvailable   = "persistent_volume_available"
+	PersistentVolumeUtilization = "persistent_volume_utilization"
+
+	PersistentVolumeClaimCount         = "persistent_volume_claim_count"
+	PersistentVolumeClaimStatusPending = "persistent_volume_claim_status_pending"
+	PersistentVolumeClaimStatusBound   = "persistent_volume_claim_status_bound"
+	PersistentVolumeClaimStatusLost    = "persistent_volume_claim_status_lost"
+
 	// kueue metrics
 
 	KueuePendingWorkloads          = "kueue_pending_workloads"
@@ -402,5 +413,16 @@ func init() {
 		HyperPodUnschedulablePendingReboot:      UnitCount,
 		HyperPodSchedulable:                     UnitCount,
 		HyperPodUnschedulable:                   UnitCount,
+
+		PersistentVolumeCount:       UnitCount,
+		PersistentVolumeCapacity:    UnitBytes,
+		PersistentVolumeUsed:        UnitBytes,
+		PersistentVolumeAvailable:   UnitBytes,
+		PersistentVolumeUtilization: UnitPercent,
+
+		PersistentVolumeClaimCount:         UnitCount,
+		PersistentVolumeClaimStatusPending: UnitCount,
+		PersistentVolumeClaimStatusBound:   UnitCount,
+		PersistentVolumeClaimStatusLost:    UnitCount,
 	}
 }

@@ -485,6 +485,77 @@ func (k *K8sAPIServer) getHyperPodResiliencyMetrics(clusterName, timestampNs str
 	return metrics
 }
 
+func (k *K8sAPIServer) getPVolumeClaimMetrics(clusterName, timestampNs string) []pmetric.Metrics {
+	var metrics []pmetric.Metrics
+
+	pvcMetrics := k.leaderElection.pVolumeClaimClient.GetPVCMetrics()
+
+	for pvcName, phase := range pvcMetrics.PVCPhases {
+		parts := strings.Split(pvcName, "/")
+		if len(parts) != 2 {
+			k.logger.Warn("Unexpected PVC name", zap.String("pvcName", pvcName))
+			continue
+		}
+		namespace, pvcName := parts[0], parts[1]
+		pvcFields := map[string]any{
+			ci.PersistentVolumeClaimCount:         1,
+			ci.PersistentVolumeClaimStatusPending: 0,
+			ci.PersistentVolumeClaimStatusBound:   0,
+			ci.PersistentVolumeClaimStatusLost:    0,
+		}
+
+		switch phase {
+		case v1.ClaimPending:
+			pvcFields[ci.PersistentVolumeClaimStatusPending] = 1
+		case v1.ClaimBound:
+			pvcFields[ci.PersistentVolumeClaimStatusBound] = 1
+		case v1.ClaimLost:
+			pvcFields[ci.PersistentVolumeClaimStatusLost] = 1
+		default:
+			k.logger.Warn("Unexpected PVC phase", zap.String("pvcName", pvcName),
+				zap.String("phase", string(phase)))
+			continue
+		}
+
+		pvcAttributes := map[string]string{
+			ci.ClusterNameKey:           clusterName,
+			ci.MetricType:               ci.TypePVC,
+			ci.Timestamp:                timestampNs,
+			"PersistentVolumeClaimName": pvcName,
+			ci.K8sNamespace:             namespace,
+			ci.Version:                  "0",
+			ci.SourcesKey:               "[\"apiserver\"]",
+		}
+
+		md := ci.ConvertToOTLPMetrics(pvcFields, pvcAttributes, k.logger)
+		metrics = append(metrics, md)
+	}
+
+	return metrics
+}
+
+func (k *K8sAPIServer) getPVolumeMetrics(clusterName, timestampNs string) []pmetric.Metrics {
+	var metrics []pmetric.Metrics
+
+	pvMetrics := k.leaderElection.pVolumeClient.GetPVMetrics()
+
+	clusterFields := map[string]any{
+		ci.PersistentVolumeCount: pvMetrics.ClusterCount,
+	}
+
+	clusterAttributes := map[string]string{
+		ci.ClusterNameKey: clusterName,
+		ci.MetricType:     ci.TypePV,
+		ci.Timestamp:      timestampNs,
+		ci.Version:        "0",
+		ci.SourcesKey:     "[\"apiserver\"]",
+	}
+	md := ci.ConvertToOTLPMetrics(clusterFields, clusterAttributes, k.logger)
+	metrics = append(metrics, md)
+
+	return metrics
+}
+
 // Shutdown stops the k8sApiServer
 func (k *K8sAPIServer) Shutdown() error {
 	if k.cancel != nil {
