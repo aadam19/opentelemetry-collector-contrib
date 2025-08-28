@@ -185,6 +185,8 @@ const (
 	PersistentVolumeClaimStatusBound   = "persistent_volume_claim_status_bound"
 	PersistentVolumeClaimStatusLost    = "persistent_volume_claim_status_lost"
 
+	IngressCount = "ingress_resource_count"
+
 	// kueue metrics
 	KueuePendingWorkloads          = "kueue_pending_workloads"
 	KueueEvictedWorkloadsTotal     = "kueue_evicted_workloads_total"
@@ -434,5 +436,7 @@ func init() {
 		PersistentVolumeClaimStatusPending: UnitCount,
 		PersistentVolumeClaimStatusBound:   UnitCount,
 		PersistentVolumeClaimStatusLost:    UnitCount,
+
+		IngressCount: UnitCount,
 	}
 }

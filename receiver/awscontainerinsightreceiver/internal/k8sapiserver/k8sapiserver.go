@@ -59,6 +59,7 @@ type K8sClient interface {
 	GetReplicaSetClient() k8sclient.ReplicaSetClient
 	GetPVolumeClaimClient() k8sclient.PVolumeClaimClient
 	GetPVolumeClient() k8sclient.PVolumeClient
+	GetIngressClient() k8sclient.IngressClient
 	ShutdownNodeClient()
 	ShutdownPodClient()
 }
@@ -173,10 +174,26 @@ func (k *K8sAPIServer) getClusterMetrics(clusterName, timestampNs string) pmetri
 
 func (k *K8sAPIServer) getNamespaceMetrics(clusterName, timestampNs string) []pmetric.Metrics {
 	var metrics []pmetric.Metrics
+
+	// Get Ingress counts if enhanced metrics are enabled
+	var ingressCounts map[string]int
+	if k.includeEnhancedMetrics && k.leaderElection.ingressClient != nil {
+		ingressMetrics := k.leaderElection.ingressClient.GetIngressMetrics()
+		ingressCounts = ingressMetrics.NamespaceCount
+	}
+
 	for namespace, podNum := range k.leaderElection.podClient.NamespaceToRunningPodNum() {
 		fields := map[string]any{
 			"namespace_number_of_running_pods": podNum,
 		}
+
+		// Add Ingress count if available for this namespace
+		if ingressCounts != nil {
+			if ingressCount, exists := ingressCounts[namespace]; exists {
+				fields[ci.IngressCount] = ingressCount
+			}
+		}
+
 		attributes := map[string]string{
 			ci.ClusterNameKey: clusterName,
 			ci.MetricType:     ci.TypeClusterNamespace,
