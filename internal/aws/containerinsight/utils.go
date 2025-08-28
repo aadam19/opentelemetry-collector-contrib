@@ -120,7 +120,6 @@ func getPrefixByMetricType(mType string) string {
 	daemonSet := "daemonset_"
 	statefulSet := "statefulset_"
 	replicaSet := "replicaset_"
-	pVolume := "persistent_volume"
 
 	switch mType {
 	case TypeInstance:
@@ -174,7 +173,7 @@ func getPrefixByMetricType(mType string) string {
 	case TypeHyperPodNode:
 		prefix = hyperPodNodeHealthStatus
 	case TypePVC, TypePV:
-		prefix = pVolume
+		prefix = ""
 	default:
 		log.Printf("E! Unexpected MetricType: %s", mType)
 	}

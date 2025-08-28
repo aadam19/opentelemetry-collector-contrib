@@ -127,19 +127,19 @@ func (s *Scraper) GetMetrics() []pmetric.Metrics {
 
 		// Add aggregated volume metrics
 		if agg.capacityBytes != nil {
-			metricName := ci.MetricName(ci.TypePV, "_capacity")
+			metricName := ci.PersistentVolumeCapacity
 			volumeMetric.AddField(metricName, float64(*agg.capacityBytes))
 		}
 		if agg.usedBytes > 0 {
-			metricName := ci.MetricName(ci.TypePV, "_used")
+			metricName := ci.PersistentVolumeUsed
 			volumeMetric.AddField(metricName, float64(agg.usedBytes))
 		}
 		if agg.availableBytes != nil {
-			metricName := ci.MetricName(ci.TypePV, "_available")
+			metricName := ci.PersistentVolumeAvailable
 			volumeMetric.AddField(metricName, float64(*agg.availableBytes))
 		}
 		if agg.capacityBytes != nil && agg.usedBytes > 0 {
-			metricName := ci.MetricName(ci.TypePV, "_utilization")
+			metricName := ci.PersistentVolumeUtilization
 			volumeMetric.AddField(metricName, float64(agg.usedBytes)/float64(*agg.capacityBytes))
 		}
 

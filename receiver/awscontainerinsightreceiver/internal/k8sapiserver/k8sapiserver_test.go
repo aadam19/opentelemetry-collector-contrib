@@ -506,7 +506,7 @@ func TestK8sAPIServer_GetMetrics(t *testing.T) {
 			assertMetricValueEqual(t, metric, "persistent_volume_count", int64(5))
 		case ci.TypePVC:
 			namespace := getStringAttrVal(metric, ci.K8sNamespace)
-			pvcName := getStringAttrVal(metric, "PersistentVolumeClaimName")
+			pvcName := getStringAttrVal(metric, ci.PersistentVolumeClaimName)
 			pvcKey := namespace + "/" + pvcName
 			switch pvcKey {
 			case "default/pvc-1":
