@@ -35,6 +35,9 @@ const (
 	OperatingSystem         = "OperatingSystem"
 	OperatingSystemWindows  = "windows"
 
+	PersistentVolumeClaimName = "PersistentVolumeClaimName"
+	PersistentVolumeName      = "PersistentVolumeName"
+
 	// The following constants are used for metric name construction
 	CPUTotal                         = "cpu_usage_total"
 	CPUUser                          = "cpu_usage_user"
@@ -167,8 +170,14 @@ const (
 	HyperPodSchedulable                     = "schedulable"
 	HyperPodUnschedulable                   = "unschedulable"
 
-	// kueue metrics
+	PersistentVolumeCount = "persistent_volume_count"
 
+	PersistentVolumeClaimCount         = "persistent_volume_claim_count"
+	PersistentVolumeClaimStatusPending = "persistent_volume_claim_status_pending"
+	PersistentVolumeClaimStatusBound   = "persistent_volume_claim_status_bound"
+	PersistentVolumeClaimStatusLost    = "persistent_volume_claim_status_lost"
+
+	// kueue metrics
 	KueuePendingWorkloads          = "kueue_pending_workloads"
 	KueueEvictedWorkloadsTotal     = "kueue_evicted_workloads_total"
 	KueueAdmittedActiveWorkloads   = "kueue_admitted_active_workloads"
@@ -200,6 +209,10 @@ const (
 
 	// kueue metric types
 	TypeClusterQueue = "ClusterQueue"
+
+	// PVC and PV metric types
+	TypePersistentVolumeClaim = "PersistentVolumeClaim"
+	TypePersistentVolume      = "PersistentVolume"
 
 	// Special type for pause container
 	// because containerd does not set container name pause container name to POD like docker does.
@@ -402,5 +415,12 @@ func init() {
 		HyperPodUnschedulablePendingReboot:      UnitCount,
 		HyperPodSchedulable:                     UnitCount,
 		HyperPodUnschedulable:                   UnitCount,
+
+		PersistentVolumeCount: UnitCount,
+
+		PersistentVolumeClaimCount:         UnitCount,
+		PersistentVolumeClaimStatusPending: UnitCount,
+		PersistentVolumeClaimStatusBound:   UnitCount,
+		PersistentVolumeClaimStatusLost:    UnitCount,
 	}
 }
