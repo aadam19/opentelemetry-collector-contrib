@@ -167,6 +167,8 @@ const (
 	HyperPodSchedulable                     = "schedulable"
 	HyperPodUnschedulable                   = "unschedulable"
 
+	IngressCount = "ingress_resource_count"
+
 	// kueue metrics
 
 	KueuePendingWorkloads          = "kueue_pending_workloads"
@@ -402,5 +404,7 @@ func init() {
 		HyperPodUnschedulablePendingReboot:      UnitCount,
 		HyperPodSchedulable:                     UnitCount,
 		HyperPodUnschedulable:                   UnitCount,
+
+		IngressCount: UnitCount,
 	}
 }
