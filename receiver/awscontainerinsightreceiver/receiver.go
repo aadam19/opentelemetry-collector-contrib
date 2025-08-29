@@ -28,6 +28,7 @@ import (
 	hostinfo "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awscontainerinsightreceiver/internal/host"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awscontainerinsightreceiver/internal/k8sapiserver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awscontainerinsightreceiver/internal/k8swindows"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awscontainerinsightreceiver/internal/kubelet"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awscontainerinsightreceiver/internal/neuron"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awscontainerinsightreceiver/internal/nvme"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awscontainerinsightreceiver/internal/prometheusscraper"
@@ -63,6 +64,7 @@ type awsContainerInsightReceiver struct {
 	nvmeScraper              *prometheusscraper.SimplePrometheusScraper
 	neuronMonitorScraper     *prometheusscraper.SimplePrometheusScraper
 	efaSysfsScraper          *efa.Scraper
+	kubeletScraper           *kubelet.Scraper
 }
 
 // newAWSContainerInsightReceiver creates the aws container insight receiver with the given parameters.
@@ -228,6 +230,7 @@ func (acir *awsContainerInsightReceiver) initEKS(ctx context.Context, host compo
 		if err != nil {
 			acir.settings.Logger.Debug("Unable to start EFA scraper", zap.Error(err))
 		}
+		acir.initKubeletScraper(kubeletClient, hostInfo)
 	}
 
 	return nil
@@ -419,6 +422,10 @@ func (acir *awsContainerInsightReceiver) initEfaSysfsScraper(localNodeDecorator 
 	return nil
 }
 
+func (acir *awsContainerInsightReceiver) initKubeletScraper(kubeletClient *kubeletutil.KubeletClient, hostInfo *hostinfo.Info) {
+	acir.kubeletScraper = kubelet.NewKubeletScraper(kubeletClient, hostInfo, acir.settings.Logger)
+}
+
 // Shutdown stops the awsContainerInsightReceiver receiver.
 func (acir *awsContainerInsightReceiver) Shutdown(context.Context) error {
 	if acir.prometheusScraper != nil {
@@ -450,6 +457,9 @@ func (acir *awsContainerInsightReceiver) Shutdown(context.Context) error {
 	}
 	if acir.efaSysfsScraper != nil {
 		acir.efaSysfsScraper.Shutdown()
+	}
+	if acir.kubeletScraper != nil {
+		acir.kubeletScraper.Shutdown()
 	}
 	if acir.decorators != nil {
 		for i := len(acir.decorators) - 1; i >= 0; i-- {
@@ -501,6 +511,10 @@ func (acir *awsContainerInsightReceiver) collectData(ctx context.Context) error 
 
 	if acir.efaSysfsScraper != nil {
 		mds = append(mds, acir.efaSysfsScraper.GetMetrics()...)
+	}
+
+	if acir.kubeletScraper != nil {
+		mds = append(mds, acir.kubeletScraper.GetMetrics()...)
 	}
 
 	for _, md := range mds {
