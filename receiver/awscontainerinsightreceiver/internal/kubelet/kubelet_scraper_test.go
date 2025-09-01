@@ -115,7 +115,7 @@ func TestGetMetrics_WithPVCVolumes(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, testClusterName, clusterName.Str())
 
-	volumeName, exists := attrs.Get(ci.PersistentVolumeName)
+	volumeName, exists := attrs.Get(ci.VolumeName)
 	assert.True(t, exists)
 	assert.Equal(t, "pvc-volume-1", volumeName.Str())
 }

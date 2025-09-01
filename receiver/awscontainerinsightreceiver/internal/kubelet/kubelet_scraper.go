@@ -144,7 +144,7 @@ func (s *Scraper) GetMetrics() []pmetric.Metrics {
 		}
 
 		// Add tags
-		volumeMetric.AddTag(ci.PersistentVolumeName, agg.volumeName)
+		volumeMetric.AddTag(ci.VolumeName, agg.volumeName)
 		volumeMetric.AddTag(ci.MetricType, ci.TypePersistentVolume)
 		volumeMetric.AddTag(ci.ClusterNameKey, s.hostInfo.GetClusterName())
 

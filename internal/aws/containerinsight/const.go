@@ -36,7 +36,9 @@ const (
 	OperatingSystemWindows  = "windows"
 
 	PersistentVolumeClaimName = "PersistentVolumeClaimName"
-	PersistentVolumeName      = "PersistentVolumeName"
+	VolumeName                = "VolumeName"
+	WorkloadName              = "WorkloadName"
+	WorkloadKind              = "WorkloadKind"
 
 	// The following constants are used for metric name construction
 	CPUTotal                         = "cpu_usage_total"
