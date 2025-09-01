@@ -148,6 +148,8 @@ func tagMetricSourceLinux(metric CIMetric) {
 		sources = []string{"dcgm", "pod", "calculated"}
 	case ci.TypeContainerNeuron:
 		sources = []string{"neuron", "pod", "calculated"}
+	case ci.TypePersistentVolume:
+		sources = []string{"kubelet", "calculated"}
 	}
 
 	if len(sources) > 0 {
@@ -185,6 +187,8 @@ func tagMetricSourceWindows(metric CIMetric) {
 		sources = append(sources, []string{"kubelet", "calculated"}...)
 	case ci.TypeContainerDiskIO:
 		sources = append(sources, []string{"kubelet"}...)
+	case ci.TypePersistentVolume:
+		sources = append(sources, []string{"kubelet", "calculated"}...)
 	}
 
 	if len(sources) > 0 {

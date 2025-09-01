@@ -172,7 +172,11 @@ const (
 
 	IngressCount = "ingress_resource_count"
 
-	PersistentVolumeCount = "persistent_volume_count"
+	PersistentVolumeCount       = "persistent_volume_count"
+	PersistentVolumeCapacity    = "persistent_volume_capacity"
+	PersistentVolumeUsed        = "persistent_volume_used"
+	PersistentVolumeAvailable   = "persistent_volume_available"
+	PersistentVolumeUtilization = "persistent_volume_utilization"
 
 	PersistentVolumeClaimCount         = "persistent_volume_claim_count"
 	PersistentVolumeClaimStatusPending = "persistent_volume_claim_status_pending"
@@ -420,7 +424,11 @@ func init() {
 
 		IngressCount: UnitCount,
 
-		PersistentVolumeCount: UnitCount,
+		PersistentVolumeCapacity:    UnitBytes,
+		PersistentVolumeUsed:        UnitBytes,
+		PersistentVolumeAvailable:   UnitBytes,
+		PersistentVolumeUtilization: UnitPercent,
+		PersistentVolumeCount:       UnitCount,
 
 		PersistentVolumeClaimCount:         UnitCount,
 		PersistentVolumeClaimStatusPending: UnitCount,
