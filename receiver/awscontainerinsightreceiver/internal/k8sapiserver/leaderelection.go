@@ -42,6 +42,7 @@ type LeaderElection struct {
 	daemonSetClient             k8sclient.DaemonSetClient
 	statefulSetClient           k8sclient.StatefulSetClient
 	replicaSetClient            k8sclient.ReplicaSetClient
+	ingressClient               k8sclient.IngressClient
 	persistentVolumeClaimClient k8sclient.PersistentVolumeClaimClient
 	persistentVolumeClient      k8sclient.PersistentVolumeClient
 
@@ -182,6 +183,7 @@ func (le *LeaderElection) startLeaderElection(ctx context.Context, lock resource
 					le.daemonSetClient = le.k8sClient.GetDaemonSetClient()
 					le.statefulSetClient = le.k8sClient.GetStatefulSetClient()
 					le.replicaSetClient = le.k8sClient.GetReplicaSetClient()
+					le.ingressClient = le.k8sClient.GetIngressClient()
 					le.persistentVolumeClaimClient = le.k8sClient.GetPersistentVolumeClaimClient()
 					le.persistentVolumeClient = le.k8sClient.GetPersistentVolumeClient()
 					le.mu.Unlock()
@@ -192,7 +194,6 @@ func (le *LeaderElection) startLeaderElection(ctx context.Context, lock resource
 					}
 
 					for {
-						le.mu.Lock()
 						leading := le.leading
 						le.mu.Unlock()
 						if !leading {

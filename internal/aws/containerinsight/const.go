@@ -170,6 +170,8 @@ const (
 	HyperPodSchedulable                     = "schedulable"
 	HyperPodUnschedulable                   = "unschedulable"
 
+	IngressCount = "ingress_resource_count"
+
 	PersistentVolumeCount = "persistent_volume_count"
 
 	PersistentVolumeClaimCount         = "persistent_volume_claim_count"
@@ -415,6 +417,8 @@ func init() {
 		HyperPodUnschedulablePendingReboot:      UnitCount,
 		HyperPodSchedulable:                     UnitCount,
 		HyperPodUnschedulable:                   UnitCount,
+
+		IngressCount: UnitCount,
 
 		PersistentVolumeCount: UnitCount,
 

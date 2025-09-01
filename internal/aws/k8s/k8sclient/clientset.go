@@ -217,6 +217,10 @@ type statefulSetClientWithStopper interface {
 	StatefulSetClient
 	stopper
 }
+type ingressClientWithStopper interface {
+	IngressClient
+	stopper
+}
 
 type persistentVolumeClaimClientWithStopper interface {
 	PersistentVolumeClaimClient
@@ -264,6 +268,8 @@ type K8sClient struct {
 
 	ssMu        sync.Mutex
 	statefulSet statefulSetClientWithStopper
+	ingressMu   sync.Mutex
+	ingress     ingressClientWithStopper
 
 	pvcMu                 sync.Mutex
 	persistentVolumeClaim persistentVolumeClaimClientWithStopper
@@ -475,6 +481,26 @@ func (c *K8sClient) ShutdownStatefulSetClient() {
 	})
 }
 
+func (c *K8sClient) GetIngressClient() IngressClient {
+	var err error
+	c.ingressMu.Lock()
+	if c.ingress == nil || reflect.ValueOf(c.ingress).IsNil() {
+		c.ingress, err = newIngressClient(c.clientSet, c.logger, ingressSyncCheckerOption(c.syncChecker))
+		if err != nil {
+			c.logger.Error("use an no-op ingress client instead because of error", zap.Error(err))
+			c.ingress = &noOpIngressClient{}
+		}
+	}
+	c.ingressMu.Unlock()
+	return c.ingress
+}
+
+func (c *K8sClient) ShutdownIngressClient() {
+	shutdownClient(c.ingress, &c.ingressMu, func() {
+		c.ingress = nil
+	})
+}
+
 func (c *K8sClient) GetPersistentVolumeClaimClient() PersistentVolumeClaimClient {
 	var err error
 	c.pvcMu.Lock()
@@ -532,6 +558,7 @@ func (c *K8sClient) Shutdown() {
 	c.ShutdownDeploymentClient()
 	c.ShutdownDaemonSetClient()
 	c.ShutdownStatefulSetClient()
+	c.ShutdownIngressClient()
 	c.ShutdownPersistentVolumeClaimClient()
 	c.ShutdownPersistentVolumeClient()
 
