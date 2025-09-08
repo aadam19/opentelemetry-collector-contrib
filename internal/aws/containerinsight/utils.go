@@ -94,6 +94,7 @@ func IsPod(mType string) bool {
 		TypePod,
 		TypePodEFA,
 		TypePodGPU,
+		TypePodDiskIO,
 		TypePodNet:
 		return true
 	}
@@ -146,6 +147,8 @@ func getPrefixByMetricType(mType string) string {
 		prefix = podNetPrefix
 	case TypePodEFA:
 		prefix = podEfaPrefix
+	case TypePodDiskIO:
+		prefix = podPrefix
 	case TypeContainer:
 		prefix = containerPrefix
 	case TypeContainerDiskIO:

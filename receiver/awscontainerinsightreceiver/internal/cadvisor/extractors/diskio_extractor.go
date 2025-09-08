@@ -27,7 +27,7 @@ func (d *DiskIOMetricExtractor) HasValue(info *cInfo.ContainerInfo) bool {
 
 func (d *DiskIOMetricExtractor) GetValue(info *cInfo.ContainerInfo, _ CPUMemInfoProvider, containerType string) []*stores.CIMetricImpl {
 	var metrics []*stores.CIMetricImpl
-	if containerType != ci.TypeNode && containerType != ci.TypeInstance {
+	if containerType != ci.TypeNode && containerType != ci.TypeInstance && containerType != ci.TypePod {
 		return metrics
 	}
 
@@ -87,8 +87,8 @@ func getDiskIOMetricType(containerType string, logger *zap.Logger) string {
 		metricType = ci.TypeNodeDiskIO
 	case ci.TypeInstance:
 		metricType = ci.TypeInstanceDiskIO
-	case ci.TypeContainer:
-		metricType = ci.TypeContainerDiskIO
+	case ci.TypePod:
+		metricType = ci.TypePodDiskIO
 	default:
 		logger.Warn("diskio_extractor: diskIO metric extractor is parsing unexpected containerType", zap.String("containerType", containerType))
 	}

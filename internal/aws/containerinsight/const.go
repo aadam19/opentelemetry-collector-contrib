@@ -192,6 +192,7 @@ const (
 	TypeNodeNet            = "NodeNet"
 	TypeInstanceDiskIO     = "InstanceDiskIO"
 	TypeNodeDiskIO         = "NodeDiskIO"
+	TypePodDiskIO          = "PodDiskIO"
 	TypePod                = "Pod"
 	TypePodNet             = "PodNet"
 	TypeContainer          = "Container"

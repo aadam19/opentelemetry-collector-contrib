@@ -104,6 +104,7 @@ func TestIsPod(t *testing.T) {
 	assert.True(t, IsPod(TypePodEFA))
 	assert.True(t, IsPod(TypePodGPU))
 	assert.True(t, IsPod(TypePodNet))
+	assert.True(t, IsPod(TypePodDiskIO))
 	assert.False(t, IsPod(TypeInstance))
 }
 

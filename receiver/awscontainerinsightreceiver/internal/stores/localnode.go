@@ -132,7 +132,8 @@ func (d *LocalNodeDecorator) addEbsVolumeInfo(tags map[string]string, ebsVolumeI
 	}
 
 	if tags[ci.MetricType] == ci.TypeContainerFS || tags[ci.MetricType] == ci.TypeNodeFS ||
-		tags[ci.MetricType] == ci.TypeNodeDiskIO || tags[ci.MetricType] == ci.TypeContainerDiskIO {
+		tags[ci.MetricType] == ci.TypeNodeDiskIO || tags[ci.MetricType] == ci.TypeContainerDiskIO ||
+		tags[ci.MetricType] == ci.TypePodDiskIO {
 		if volID := ebsVolumeIDsUsedAsPV[deviceName]; volID != "" {
 			tags[ci.EbsVolumeID] = volID
 		}

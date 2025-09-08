@@ -130,6 +130,8 @@ func tagMetricSourceLinux(metric CIMetric) {
 		sources = []string{"cadvisor", "pod", "calculated"}
 	case ci.TypePodNet:
 		sources = []string{"cadvisor", "calculated"}
+	case ci.TypePodDiskIO:
+		sources = []string{"cadvisor"}
 	case ci.TypeContainer:
 		sources = []string{"cadvisor", "pod", "calculated"}
 	case ci.TypeContainerFS:
@@ -179,6 +181,8 @@ func tagMetricSourceWindows(metric CIMetric) {
 		sources = append(sources, []string{"kubelet", "pod", "calculated"}...)
 	case ci.TypePodNet:
 		sources = append(sources, []string{"kubelet", "calculated"}...)
+	case ci.TypePodDiskIO:
+		sources = append(sources, []string{"kubelet"}...)
 	case ci.TypeContainer:
 		sources = append(sources, []string{"kubelet", "pod", "calculated"}...)
 	case ci.TypeContainerFS:

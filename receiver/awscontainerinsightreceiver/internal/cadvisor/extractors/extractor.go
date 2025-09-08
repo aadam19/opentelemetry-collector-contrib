@@ -100,6 +100,9 @@ func getMetricKey(metric *stores.CIMetricImpl) string {
 	case ci.TypeNodeDiskIO:
 		// merge io_serviced, io_service_bytes for type NodeDiskIO
 		metricKey = fmt.Sprintf("metricType:%s,device:%s", ci.TypeNodeDiskIO, metric.GetTags()[ci.DiskDev])
+	case ci.TypePodDiskIO:
+		// merge io_serviced, io_service_bytes for type PodDiskIO
+		metricKey = fmt.Sprintf("metricType:%s, podId:%s, device:%s", ci.TypePodDiskIO, metric.GetTags()[ci.PodIDKey], metric.GetTags()[ci.DiskDev])
 	default:
 		metricKey = ""
 	}
